@@ -1,0 +1,601 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<!-- CSS -->
+		<style>
+			html {
+				width: 100%;
+				height: 100%;
+			}
+
+			body {
+				font-family: calibri, arial, sans-serif;
+				width: 100%;
+				height: 100%;
+				text-align: center;
+				overflow-x: hidden;
+				overflow-y: hidden;
+			}
+
+			#infoDiv {
+				position: absolute;
+				top: 5%;
+				left: 25%;
+				width: 50%;
+			}
+
+			#resetBtn {
+				position: absolute;
+				left: 15%;
+				top: 15%;
+				width: 100px;
+				height: 50px;
+				background-color: grey;
+				border: 0;
+			}
+
+			#dialog {
+				font-size: 1.17em;
+				font-weight: bold;
+				position: absolute;
+				top: 35%;
+				left: 40%;
+				background-color: rgba(255, 255, 255, 0.6);
+				width: 15%;
+				padding: 2.5%;
+				display: none;
+			}
+
+			#board {
+				position: absolute;
+				left: 25%;
+				top: 15%;
+				width: 50%;
+				max-width: 800px;
+			}
+
+			.rows {
+				width: 100%;
+				clear: both;
+			}
+
+			.boxes {
+				width: 33.3333333333%;
+				display: inline-block;
+				outline: solid 1px chocolate;
+
+			}
+			.boxbackground {
+				background-color: grey;
+			}
+			.select {
+				outline: solid 3px red;
+
+			}
+
+			.crossGo {
+				background-image: url('http://www.clker.com/cliparts/6/8/Z/b/2/1/tic-tac-toe-hi.png');
+				background-position: right !important;
+				background-size: cover;
+			}
+
+			.circleGo {
+				background-image: url('http://www.clker.com/cliparts/6/8/Z/b/2/1/tic-tac-toe-hi.png');
+				/*				background-image: url('http://pages.uoregon.edu/zelongl/img/rook-black.png');*/
+				/*				background-image: url('img/rook-black.png');*/
+				background-position: left !important;
+				background-position: center;
+				background-size: cover;
+			}
+			/* new stuff*/
+			.brook {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/rook-black.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+			.wrook {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/rook-white.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+
+			.bknight {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/knight-black.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+
+			.wknight {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/knight-white.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+
+			.bbishop {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/bishop-black.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+			.wbishop {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/bishop-white.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+			.bqueen {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/queen-black.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+			.wqueen {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/queen-white.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+			.bking {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/king-black.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+			.wking {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/king-white.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+			.bpawn {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/pawn-black.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+			.wpawn {
+				background-image: url('http://pages.uoregon.edu/zelongl/img/pawn-white.png');
+				background-position: left !important;
+				background-size: cover;
+			}
+		</style>
+		<!--
+		POST											RESPONSE
+		{type: ‘newgame’}  // to start new game			{type: ‘newgame’}
+
+		{type: ‘move’, r: row, c: column}				{type: ‘comwon’,  // computer won the game
+		r: row,
+		c: column}
+
+		{type: ‘userwon’} // user won the game
+
+		{type: ‘tie’}// tie
+
+		{type: commove, // no win, computer’s move
+		r: row,
+		c: column}
+		-->
+		<!-- lib JS -->
+		<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+		<script>
+			$(document).ready(init);
+			var SERVERURL = "http://localhost:8080/";
+			// the server's url
+			var MAXWIDTH = 8;
+			// board size
+
+			var $board;
+			var userTurn = 0;
+			// 0 black; 1 white
+			var gameState = 'waiting';
+
+			var action = 0;
+			//0 start, 1 selected.
+
+			var var1 = 'size';
+			function restartGame() {
+				$('#info').html("Waiting On Server's Response...");
+				$('#dialog').html("Start New Game");
+				$('#dialog').fadeIn(500, function() {
+					setTimeout(function() {
+						$('#dialog').fadeOut(500);
+					}, 500);
+					$board.empty();
+					createNewBoard();
+					userTurn = 0;
+				});
+				//				var1 = document.getElementById ("size");//获取该textbox对象 AND new!
+
+				var size = MAXWIDTH;
+				MAXWIDTH = size;
+				$.post(SERVERURL, {
+					type : "newgame",
+					r : "0",
+					c : "0",
+					size : size
+				}, function(data) {
+					data = JSON.parse(data);
+
+					if (data.type == 'newgame') {
+						$('#info').html("Welcome To Tic-Tac-Toe Size:" + size);
+						gameState = 'start';
+					}
+				});
+				return;
+			}
+
+			$spos = $('#pos' + 0 + "-" + 0);
+
+			function haspiece($pos) {
+				if ($pos.hasClass('brook'))
+					return 'brook';
+				else if ($pos.hasClass('bknight'))
+					return 'bknight';
+				else if ($pos.hasClass('brook'))
+					return 'brook';
+				else if ($pos.hasClass('bbishop'))
+					return 'bbishop';
+				else if ($pos.hasClass('bqueen'))
+					return 'bqueen';
+				else if ($pos.hasClass('bking'))
+					return 'bking';
+				else if ($pos.hasClass('bpawn'))
+					return 'bpawn';
+				else if ($pos.hasClass('wrook'))
+					return 'wrook';
+				else if ($pos.hasClass('wknight'))
+					return 'wknight';
+				else if ($pos.hasClass('wbishop'))
+					return 'wbishop';
+				else if ($pos.hasClass('wqueen'))
+					return 'wqueen';
+				else if ($pos.hasClass('wking'))
+					return 'wking';
+//				else if ($pos.hasClass('wqueen'))
+//					return 'wqueen';
+				else if ($pos.hasClass('wpawn'))
+					return 'wpawn';
+				else {
+					return 'empty';
+				}
+			}
+
+			function rule($spos, $pos, srow, scol, row, col) {
+				if ($spos.hasClass('wpawn')) {//白小兵
+					if (srow == 6) {
+						if ( scol == col && ((srow - row) < 3)&& 0<(srow - row)) {//第一步小于等于2格
+							return true;
+						}
+						else if(haspiece($pos)!='empty'){
+							if((row-srow)==-1&&((col-scol==-1)||(col-scol==1))){ // 小兵斜走吃子。左右向前
+								return true;
+							}
+						}
+						else{return false;}
+					}
+					else{
+						if ( scol == col && ((srow - row) < 2)&& 0<(srow - row)&&haspiece($pos)=='empty') {//之后不能后退
+							return true;
+						}
+						else if((row-srow)==-1&&((col-scol==-1)||(col-scol==1))){ // 小兵斜走吃子。左右向前
+								return true;
+							}
+						else{return false;}
+					}
+//					else if(srow!=6){}
+				}
+				else if($spos.hasClass('bpawn')){//黑小兵开始定义
+					if (srow == 1) { //黑小兵在第一行起始
+						if ( scol == col && ((row - srow) < 3)&& 0<(row - srow)) {//第一步小于等于2格
+							return true;
+						}
+						else if(haspiece($pos)!='empty'){
+							if((row-srow)==1&&((col-scol==-1)||(col-scol==1))){ // 小兵斜走吃子。左右向前
+								return true;
+							}
+						}
+						else{return false;}
+					}
+					else{//黑小兵不在起始第一行
+						if ( scol == col && ((row - srow) < 2)&& 0<(row - srow)&&haspiece($pos)=='empty') {//之后不能后退
+							return true;
+						}
+						else if((row-srow)==1&&((col-scol==-1)||(col-scol==1))){ // 小兵斜走吃子。左右向前
+								return true;
+							}
+						else{return false;}
+					}
+
+				}
+				else if($spos.hasClass('wrook')||$spos.hasClass('brook')){
+					if(row==srow){return true;}
+					else if (col==scol){return true;}
+					else {return false;}
+				}
+				else if($spos.hasClass('wknight')||$spos.hasClass('bknight')){
+					if(Math.abs(row-srow)==2&&Math.abs(col-scol)==1){return true;}  //2X1Y
+					else if(Math.abs(row-srow)==1&&Math.abs(col-scol)==2){return true;}//2Y 1X
+					else {return false;}
+				}
+				else if($spos.hasClass('bbishop')||$spos.hasClass('wbishop')){
+					if(Math.abs(row-srow)==Math.abs(col-scol)){return true;}
+					else {return false;}
+				}
+				else if($spos.hasClass('bqueen')||$spos.hasClass('wqueen')){
+					if(Math.abs(row-srow)==Math.abs(col-scol)){return true;}
+					else if(row==srow){return true;}
+					else if(col==scol){return true;}
+					else {return false;}
+				}
+				else if($spos.hasClass('bking')||$spos.hasClass('wking')){
+					if(Math.abs(row-srow)<2&&Math.abs(col-scol)<2){return true;}
+					else{return false;}
+				}
+				
+				else {return false;}
+			}
+
+			function placeGo(r, c) {
+				$pos = $('#pos' + r + "-" + c);
+				if ($pos.hasClass('crossGo') || $pos.hasClass('circleGo')) {
+					console.log('no');
+					return false;
+
+				} else {
+					if (userTurn == 0) {
+						if (!$pos.hasClass('select') && action == 0) {//如果没有选定框框，那么+框框
+							//		 				$pos.removeClass();
+							$spos = $pos;
+							srow = r;
+							scol = c;
+
+							//		 				$pos.addClass('boxes');
+							$pos.addClass('select');
+							action = 1;
+							return false;
+							// 只是选定一个，什么都不post过去
+						} else if (srow == r && scol == c) {
+							$pos.removeClass('select');
+
+							action = 0;
+							return false;
+						} else if (haspiece($spos) == 'empty') {
+							$spos.removeClass('select');
+							$pos.addClass('select');
+							$spos = $pos;
+							srow = r;
+							scol = c;
+							action = 1;
+							return false;
+						} else if (haspiece($spos) != 'empty') {
+							if(rule($spos,$pos,srow,scol,r,c)){
+							$pos.removeClass(haspiece($pos));
+							$pos.addClass(haspiece($spos));
+							$spos.removeClass('select');
+							$spos.removeClass(haspiece($spos));
+							action = 0;
+							}
+						}
+						
+
+						//						 else {
+						//							$spos.removeClass('brook');
+						//							$pos.addClass('brook');
+						//						}
+					} else {
+
+						//		 				$spos.addClass('boxes');
+						$pos.addClass('circleGo');
+					}
+
+					return true;
+				}
+			}
+
+			function showDialog(msg) {
+				$('#dialog').html(msg);
+				$('#dialog').show();
+			}
+
+			function endGame(winner) {
+				gameState = 'ended';
+				if (winner != null) {
+					showDialog('<p>' + winner + ' is the winner</p><p>Press reset button to start a new game</p>');
+				} else {
+					showDialog('<p>Stalemate</p><p>Press reset button to start a new game</p>');
+				}
+			}
+
+			// notify the server the current move and wait for a response
+			function postComputerMove(row, col) {
+				$.post(SERVERURL, {
+					type : "move",
+					r : row,
+					c : col,
+					size : MAXWIDTH
+				}, function(data) {
+					//parse data
+					data = JSON.parse(data);
+					// the computer won the game
+					if (userTurn == 1 && data.type == "comwon") {
+						// place the move and show end game msg
+						if (placeGo(data.r, data.c)) {
+							endGame('Circle');
+						} else {
+							console.error('Server Sent An Illegal Move')
+						}
+
+						// the user won the game
+					} else if (userTurn == 1 && data.type == "userwon") {
+						// show end game msg
+						endGame('Cross');
+
+						// tie game
+					} else if (userTurn == 1 && data.type == "tie") {
+						endGame()
+
+						// computer's move
+					} else if (userTurn == 1 && data.type == "commove") {
+						// place the computer's move and switch to user's turn
+						if (placeGo(data.r, data.c)) {
+							userTurn = (userTurn + 1) % 2;
+						} else {
+							console.error('Server Sent An Illegal Move')
+						}
+
+					} else {
+						console.error('Illegal Response')
+					}
+				});
+			}
+
+			function tryPlaceGo(e) {
+				// if it's the user's turn and game state is start
+				if (userTurn == 0 && gameState == 'start') {
+					console.log(e);
+
+					// try to place a go at the position
+					var $box = $(e.target);
+					var row = $box.data('r');
+					var col = $box.data('c');
+
+					var srow = 0;
+					//starting row
+					var scol = 0;
+					//starting col
+
+					if (placeGo(row, col)) {
+						//						if(action=0){
+						//						srow=row;
+						//							scol=col;
+						//					action=action+1;
+						//							$pos = $('#pos'+srow + "-" + scol);
+						//							$pos.removeClass();
+						//						}
+						//						else
+						//						{
+
+						//						}
+//						userTurn = (userTurn + 1) % 2;
+//						postComputerMove(row, col);
+					}
+				}
+			}
+
+			function createNewBoard() {
+				$board.height($board.width() + "px");
+
+				var height = Math.floor($board.height() / MAXWIDTH) + "px";
+
+				for (var i = 0; i < MAXWIDTH; i++) {
+					$board.append("<div id='row" + i + "' class='rows'></div>");
+					$row = $('#row' + i);
+					$row.height(height);
+					for (var j = 0; j < MAXWIDTH; j++) {
+						$row.append("<span id='pos" + i + "-" + j + "' class='boxes'></span>");
+						$box = $('#pos' + i + "-" + j);
+						$box.height(height);
+						$box.data("r", i);
+						$box.data("c", j);
+						$box.click(tryPlaceGo);
+						if ((i + j) % 2 == 1) {
+							$box.addClass('boxbackground');
+						}
+					}
+				}
+				//ggod				adding bpieces
+				$pos = $('#pos' + 0 + "-" + 0);
+				$pos.addClass('brook');
+				$pos = $('#pos' + 0 + "-" + 1);
+				$pos.addClass('bknight');
+				$pos = $('#pos' + 0 + "-" + 2);
+				$pos.addClass('bbishop');
+				$pos = $('#pos' + 0 + "-" + 3);
+				$pos.addClass('bqueen');
+				$pos = $('#pos' + 0 + "-" + 4);
+				$pos.addClass('bking');
+				$pos = $('#pos' + 0 + "-" + 5);
+				$pos.addClass('bbishop');
+				$pos = $('#pos' + 0 + "-" + 6);
+				$pos.addClass('bknight');
+				$pos = $('#pos' + 0 + "-" + 7);
+				$pos.addClass('brook');
+				$pos = $('#pos' + 1 + "-" + 0);
+				$pos.addClass('bpawn');
+				$pos = $('#pos' + 1 + "-" + 1);
+				$pos.addClass('bpawn');
+				$pos = $('#pos' + 1 + "-" + 2);
+				$pos.addClass('bpawn');
+				$pos = $('#pos' + 1 + "-" + 3);
+				$pos.addClass('bpawn');
+				$pos = $('#pos' + 1 + "-" + 4);
+				$pos.addClass('bpawn');
+				$pos = $('#pos' + 1 + "-" + 5);
+				$pos.addClass('bpawn');
+				$pos = $('#pos' + 1 + "-" + 6);
+				$pos.addClass('bpawn');
+				$pos = $('#pos' + 1 + "-" + 7);
+				$pos.addClass('bpawn');
+
+				$pos = $('#pos' + 7 + "-" + 0);
+				$pos.addClass('wrook');
+				$pos = $('#pos' + 7 + "-" + 1);
+				$pos.addClass('wknight');
+				$pos = $('#pos' + 7 + "-" + 2);
+				$pos.addClass('wbishop');
+				$pos = $('#pos' + 7 + "-" + 3);
+				$pos.addClass('wqueen');
+				$pos = $('#pos' + 7 + "-" + 4);
+				$pos.addClass('wking');
+				$pos = $('#pos' + 7 + "-" + 5);
+				$pos.addClass('wbishop');
+				$pos = $('#pos' + 7 + "-" + 6);
+				$pos.addClass('wknight');
+				$pos = $('#pos' + 7 + "-" + 7);
+				$pos.addClass('wrook');
+
+				$pos = $('#pos' + 6 + "-" + 0);
+				$pos.addClass('wpawn');
+				$pos = $('#pos' + 6 + "-" + 1);
+				$pos.addClass('wpawn');
+				$pos = $('#pos' + 6 + "-" + 2);
+				$pos.addClass('wpawn');
+				$pos = $('#pos' + 6 + "-" + 3);
+				$pos.addClass('wpawn');
+				$pos = $('#pos' + 6 + "-" + 4);
+				$pos.addClass('wpawn');
+				$pos = $('#pos' + 6 + "-" + 5);
+				$pos.addClass('wpawn');
+				$pos = $('#pos' + 6 + "-" + 6);
+				$pos.addClass('wpawn');
+				$pos = $('#pos' + 6 + "-" + 7);
+				$pos.addClass('wpawn');
+
+				if ($board.width() == 800) {
+					$board.css('left', ($('body').width() - 800) / 2);
+				}
+				$('.boxes').css('width', '' + 100 / MAXWIDTH + '%');
+
+			}
+
+			function init() {
+				// preload img
+				var image = new Image();
+				//			image.src = 'http://www.clker.com/cliparts/6/8/Z/b/2/1/tic-tac-toe-hi.png';
+				//			var brook = new Image();
+				//			brook.src = 'rook-black.png';
+				// initiate the board
+				$board = $('#board');
+				$('#resetBtn').click(restartGame);
+				restartGame();
+			}
+		</script>
+	</head>
+	<body>
+		<div id = "infoDiv">
+			<h1 id = "info"></h1>
+		</div>
+		<div id = "board"></div>
+		<!--		<img src = "rook-black.png" />-->
+		<input id='resetBtn' type='button' value='Reset'/>
+		<div id="dialog"></div>
+		<div>
+			<br>
+			<br>
+		</div>
+	</body>
+
+</html>
